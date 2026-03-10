@@ -112,10 +112,10 @@ void HdGSEParser::processBBF(const char* buffer, int bbfLength){
         int gsePayload = dataLength - (gseHeaderLength - BASE_GSE_HEADER_LENGTH);
         stats.totalPayloadLength += gsePayload;
 
-        // if(forwardingEnabled){
-        //     int payloadStart = pos + gseHeaderLength;
-        //     sendPayload(buffer + payloadStart, gsePayload);
-        // }
+        if(forwardingEnabled){
+            int payloadStart = pos + gseHeaderLength;
+            sendPayload(buffer + payloadStart, gsePayload);
+        }
 
         stats.gseAmount++;
         
@@ -135,69 +135,6 @@ void HdGSEParser::sendPayload(const char* data, int length){
     }
 
 } 
-// void HdGSEParser::sendPayload(const char* buffer, int size){
-// stats.totalLength += size - 10;
-// int packetsInBBF = 0;
-// int pos = 10; // Пропускаем BBF заголовок (10 байт)
-// while (pos + 1 <= size) {
-//     int gseHeaderLength = 2;
-//     std::uint8_t b1 = (std::uint8_t)buffer[pos];
-//     std::uint8_t b2 = (std::uint8_t)buffer[pos + 1];
-
-//     if(isGsePadding(b1, b2)){
-//         stats.totalPaddingLength += size - pos;
-//         break;
-//     }//проверка на паддинг
-
-//     std::uint16_t dataLength = get12bitLength(b1, b2);//длина gse пакета
-//     bool S = isStart(b1);
-//     bool E = isEnd(b1);
-//     if(S != E){
-//         gseHeaderLength += 1;
-//     }
-//     if(S == 1){
-//         gseHeaderLength += 2;
-//     }
-//     int sizeCG = 0;
-//     unsigned char CGtype = getCG(b1);
-//     if(CGtype == 0b00){
-//         sizeCG = 0;
-//     }
-//     else if( CGtype == 0b01){
-//         sizeCG = 4;
-//     }
-//     else if( CGtype == 0b10){
-//         sizeCG = 0;
-//     }
-//     else if( CGtype == 0b11){
-//         sizeCG = get13bitLength(buffer[pos + gseHeaderLength], buffer[pos + gseHeaderLength + 1]) + 6;// Seqcount + HID + BZheader + Reserved
-//     }
-//     gseHeaderLength += sizeCG;
-//     stats.totalHeaderLength += gseHeaderLength;
-//     int gsePayload = dataLength + 2 - gseHeaderLength;
-//     char payload[65037];
-//     memcpy(payload, &buffer[pos + gseHeaderLength - 2], dataLength - gseHeaderLength + 2);
-
-//     // Отправляем только payload
-//     int sent = sendto(send_sock, payload, gsePayload, 0,
-//                     (sockaddr*)&send_addr, sizeof(send_addr));
-    
-//     if (sent == SOCKET_ERROR) {
-//         std::cerr << "Send failed: " << WSAGetLastError() << std::endl;
-//     } else {
-//         std::cout << "BBF "<< stats.bbfNum<<" GSE " << packetsInBBF << " has "<< gsePayload << " bytes " << pos + 2 + dataLength << std::endl;
-//     }
-//     //Расчет payload
-//     stats.totalPayloadLength += gsePayload;
-
-//     packetsInBBF++;
-//     stats.gseAmount++;
-    
-//     // Переходим к следующему пакету
-//     pos += 2 + dataLength;
-// }
-// stats.bbfNum++;
-// }
 
 void HdGSEParser::printStatistics() const{
     // Заголовок
