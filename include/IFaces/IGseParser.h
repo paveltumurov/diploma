@@ -10,6 +10,6 @@
 class IParser{
   public:
     virtual ~IParser() = default;
-    virtual void processBBF(const char* buffer, int size) = 0;
-    virtual void printStatistics() const = 0;
+    virtual void processBBF(const char* buffer, int32_t size) = 0;
+    virtual void printStatistics()  = 0;
 };

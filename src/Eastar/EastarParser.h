@@ -19,6 +19,9 @@ class EastarGSEParser : public IParser{
 
     std::uint16_t getLength(uint8_t b1, uint8_t b2);
 
+    std::chrono::steady_clock::time_point startTime;
+    std::chrono::steady_clock::time_point endTime;
+
   public:
     EastarGSEParser(SOCKET sock, sockaddr_in addr);
     EastarGSEParser();
@@ -28,7 +31,8 @@ class EastarGSEParser : public IParser{
     void processBBF(const char* buffer, int size);
     void sendPayload(const char* buffer, int size);
 
-    void printStatistics() const;
+    void printStatistics();
+    void resetStatistics();
 
     ~EastarGSEParser() override;
 };

@@ -24,6 +24,8 @@ class HdGSEParser: public IParser{
     SOCKET sendSocket;
     sockaddr_in destinationAddress;
 
+    std::chrono::steady_clock::time_point startTime;
+    std::chrono::steady_clock::time_point endTime;
     bool forwardingEnabled;
 
   public:
@@ -33,7 +35,9 @@ class HdGSEParser: public IParser{
 
     void processBBF(const char* buffer, int size);
     void sendPayload(const char* buffer, int size);
-    void printStatistics() const;
+
+    void printStatistics();
+    void resetStatistics();
 
     ~HdGSEParser() override;
 };

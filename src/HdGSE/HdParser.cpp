@@ -29,15 +29,9 @@ HdGSEParser::HdGSEParser(SOCKET sock, sockaddr_in addr) : sendSocket(sock), dest
 
 HdGSEParser::HdGSEParser() : forwardingEnabled(false) {}
 
-HdGSEParser::~HdGSEParser() {
-    stats.paddingRatio = 100.0 * stats.totalPaddingLength / stats.totalLength;
-    stats.efficiency = 100.0 * stats.totalPayloadLength / stats.totalLength;
-    stats.overheadRatio = 100.0 * stats.totalHeaderLength / stats.totalLength;
-    printStatistics();
-};
+HdGSEParser::~HdGSEParser() {};
 
 void HdGSEParser::processBBF(const char* buffer, int bbfLength){
-
     static constexpr int32_t BBF_HEADER_LENGTH = 10;
     static constexpr int32_t BASE_GSE_HEADER_LENGTH = 2;
     static constexpr int32_t FRAG_ID_FIELD_LENGTH = 1;
@@ -45,6 +39,10 @@ void HdGSEParser::processBBF(const char* buffer, int bbfLength){
     static constexpr int32_t SEQUENCE_COUNTER_FIELD_LENGTH = 2;
     static constexpr int32_t HID_FIELD_LENGTH = 2;
     static constexpr int32_t BASE_BZ_HEADER_LENGTH = 2;
+
+    if(stats.bbfNum == 0){
+        startTime = std::chrono::steady_clock::now();
+    }
 
     stats.totalLength += bbfLength - BBF_HEADER_LENGTH;
 
@@ -63,8 +61,6 @@ void HdGSEParser::processBBF(const char* buffer, int bbfLength){
         }
 
         std::uint16_t dataLength = get12bitLength(b1, b2);
-
-        std::cout << "dataLength: "<<dataLength ;
 
         bool S = isStartFragment(b1);
         bool E = isEndFragment(b1);
@@ -96,13 +92,10 @@ void HdGSEParser::processBBF(const char* buffer, int bbfLength){
             uint8_t bzByte1 = buffer[bzPosition];
             uint8_t bzByte2 = buffer[bzPosition + 1];
 
-            std::cout << " bzPosition "<< bzPosition;
             bzReservedLength = getBzReservedLength(bzByte1, bzByte2);
             bzHeaderLength = BASE_BZ_HEADER_LENGTH + bzReservedLength;
 
         }
-
-        std::cout << " gseHeaderLength : " << gseHeaderLength << " guaranteeHeaderLength : " << guaranteeHeaderLength << " bz " << bzHeaderLength << std::endl;
 
         gseHeaderLength += guaranteeHeaderLength + bzHeaderLength;
 
@@ -120,10 +113,11 @@ void HdGSEParser::processBBF(const char* buffer, int bbfLength){
         stats.gseAmount++;
         
         pos += BASE_GSE_HEADER_LENGTH + dataLength;
+
     }
-    
-    std::cout<<stats.bbfNum<<std::endl;
+
     stats.bbfNum++;
+    endTime = std::chrono::steady_clock::now();
 }
 
 void HdGSEParser::sendPayload(const char* data, int length){
@@ -136,7 +130,19 @@ void HdGSEParser::sendPayload(const char* data, int length){
 
 } 
 
-void HdGSEParser::printStatistics() const{
+void HdGSEParser::printStatistics() {
+    stats.paddingRatio = 100.0 * stats.totalPaddingLength / stats.totalLength;
+    stats.efficiency = 100.0 * stats.totalPayloadLength / stats.totalLength;
+    stats.overheadRatio = 100.0 * stats.totalHeaderLength / stats.totalLength;
+
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+
+    double goodput = 0;
+    double throughput = 0;
+
+    throughput = stats.totalLength / (duration.count() / 1000.0);
+    goodput = stats.totalPayloadLength / (duration.count() / 1000.0);
+
     // Заголовок
     std::cout << "\n" << std::string(60, '=') << std::endl;
     std::cout << "STATISTICS FOR HdGSE"  << std::endl;
@@ -165,7 +171,9 @@ void HdGSEParser::printStatistics() const{
     std::cout << std::setw(labelWidth) << "Efficiency:" << stats.efficiency << "%" << std::endl;
     std::cout << std::setw(labelWidth) << "Overhead ratio:" << stats.overheadRatio << "%" << std::endl;
     std::cout << std::setw(labelWidth) << "Padding ratio:" << stats.paddingRatio << "%" << std::endl;
-    
+    std::cout << std::setw(labelWidth) << "Throughput:" << throughput << "byte/sec" << std::endl;
+    std::cout << std::setw(labelWidth) << "Goodput:" << goodput << "byte/sec" << std::endl;
+
     // Проверка на ошибки (если сумма не сходится)
     int calculated_total = stats.totalPayloadLength + stats.totalHeaderLength + stats.totalPaddingLength;
     if (calculated_total != stats.totalLength) {
@@ -177,3 +185,15 @@ void HdGSEParser::printStatistics() const{
     
     std::cout << std::string(60, '=') << "\n" << std::endl;
 };
+
+void HdGSEParser::resetStatistics() {
+    stats.bbfNum = 0;
+    stats.gseAmount = 0;
+    stats.totalLength = 0;
+    stats.totalPayloadLength = 0;
+    stats.totalHeaderLength = 0;
+    stats.totalPaddingLength = 0;
+    stats.efficiency = 0.0;
+    stats.overheadRatio = 0.0;
+    stats.paddingRatio = 0.0;
+}

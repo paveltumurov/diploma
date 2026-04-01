@@ -60,11 +60,6 @@ int32_t StandardGSEParser::getHeaderLength(uint8_t b1, uint8_t b2) const{
 }
 
 StandardGSEParser::~StandardGSEParser() {
-    stats.paddingRatio = 100.0 * stats.totalPaddingLength / stats.totalLength;
-    stats.efficiency = 100.0 * stats.totalPayloadLength / stats.totalLength;
-    stats.overheadRatio = 100.0 * stats.totalHeaderLength / stats.totalLength;
-    printStatistics();
-
     if (sendSocket != INVALID_SOCKET) {
         closesocket(sendSocket);    // Windows
         // close(sendSocket);       // Linux
@@ -105,7 +100,6 @@ void StandardGSEParser::processBBF(const char* buffer, int32_t bbfLength){
         
         pos += BASE_HEADER_LENGTH + dataLength;
     }
-    std::cout<<stats.bbfNum<<std::endl;
     stats.bbfNum++;
 }
 
@@ -119,7 +113,10 @@ void StandardGSEParser::sendPayload(const char* data, int32_t length) {
 }
 
 
-void StandardGSEParser::printStatistics() const{
+void StandardGSEParser::printStatistics() {
+    stats.paddingRatio = 100.0 * stats.totalPaddingLength / stats.totalLength;
+    stats.efficiency = 100.0 * stats.totalPayloadLength / stats.totalLength;
+    stats.overheadRatio = 100.0 * stats.totalHeaderLength / stats.totalLength;
     // Заголовок
     std::cout << "\n" << std::string(60, '=') << std::endl;
     std::cout << "STATISTICS FOR Standard GSE"  << std::endl;
@@ -160,3 +157,15 @@ void StandardGSEParser::printStatistics() const{
     
     std::cout << std::string(60, '=') << "\n" << std::endl;
 };
+
+void StandardGSEParser::resetStatistics() {
+    stats.bbfNum = 0;
+    stats.gseAmount = 0;
+    stats.totalLength = 0;
+    stats.totalPayloadLength = 0;
+    stats.totalHeaderLength = 0;
+    stats.totalPaddingLength = 0;
+    stats.efficiency = 0.0;
+    stats.overheadRatio = 0.0;
+    stats.paddingRatio = 0.0;
+}

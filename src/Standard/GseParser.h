@@ -29,8 +29,9 @@ class StandardGSEParser: public IParser{
     StandardGSEParser(SOCKET sock, sockaddr_in addr);
 
     void processBBF(const char* buffer, int32_t size);
-    void printStatistics() const;
+    void printStatistics() ;
+    void resetStatistics();
     ~StandardGSEParser() override;
-    void sendPayload(const char* buffer, int size);
+    void sendPayload(const char* buffer, int32_t size);
 };
 
